@@ -17,10 +17,10 @@
   (-> (children node) first attributes :href))
 
 
-(defn- process-tree [node elements]
-  (defn- iter [node elements]
+(defn- process-tree [node links]
+  (defn- iter [node links]
     (loop [items node
-           result elements]
+           result links]
       ;; тут if будет смотреться лучше - за счет необходимости явно писать :else
       (if
         (empty? items) result
@@ -32,12 +32,12 @@
 ;;    (is-link-container? ...)
 ;;    :else ...
   (cond
-    (not (vector? node)) elements
+    (not (vector? node)) links
     ;; тут есть небольшая потенциальная ошибка - предполагается что у "детей" этой ноды не может быть ссылок
-    (is-link-container? node)
-      (conj elements (get-link-from-container node))
     :else
-      (iter node elements)))
+      (if (is-link-container? node)
+        (conj links (get-link-from-container node))
+      (iter node links))))
 
 (defn get-links []
 " 1) Find all elements containing {:class \"r\"}.
