@@ -3,10 +3,12 @@
   (:gen-class))
 
 ;; Подход правильный, есть только небольшие замечания (ниже по тексту)
+(defn- is-parent? [item]
+  (and (> (count (children item)) 0)
+       (map? (attributes item))))
 
 (defn- is-link-container? [item]
-  (and (> (count (children item)) 0)
-       (map? (attributes item))
+  (and (is-parent? item)
        (= "r" (:class (attributes item)))))
 
 (defn- get-link-from-container [node]
@@ -14,7 +16,15 @@
 ;; вот так (-> (children node) first attributes :href)
   (-> (children node) first attributes :href))
 
+
 (defn- process-tree [node elements]
+  (defn- iter [node elements]
+    (loop [items node
+           result elements]
+      ;; тут if будет смотреться лучше - за счет необходимости явно писать :else
+      (if
+        (empty? items) result
+        (recur (next items) (process-tree (first items) result)))))
 ;; в данном случае cond используется как if, так что лучше либо использовать if, либо изменить cond чтобы он обрабатывал
 ;; больше условий. Например,
 ;; (cond
@@ -24,14 +34,10 @@
   (cond
     (not (vector? node)) elements
     ;; тут есть небольшая потенциальная ошибка - предполагается что у "детей" этой ноды не может быть ссылок
-    (is-link-container? node) (conj elements (get-link-from-container node))
+    (is-link-container? node)
+      (conj elements (get-link-from-container node))
     :else
-      (loop [items node
-             result elements]
-        ;; тут if будет смотреться лучше - за счет необходимости явно писать :else
-        (if
-          (empty? items) result
-          (recur (next items) (process-tree (first items) result))))))
+      (iter node elements)))
 
 (defn get-links []
 " 1) Find all elements containing {:class \"r\"}.
