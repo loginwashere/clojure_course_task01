@@ -31,12 +31,11 @@
 ;;    (not (vector? ....) ...
 ;;    (is-link-container? ...)
 ;;    :else ...
-  (cond
+  (if
     (not (vector? node)) links
     ;; тут есть небольшая потенциальная ошибка - предполагается что у "детей" этой ноды не может быть ссылок
-    :else
-      (if (is-link-container? node)
-        (conj links (get-link-from-container node))
+    (if (is-link-container? node)
+      (iter node (conj links (get-link-from-container node)))
       (iter node links))))
 
 (defn get-links []
