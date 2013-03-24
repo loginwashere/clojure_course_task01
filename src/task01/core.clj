@@ -12,7 +12,7 @@
 (defn- get-link-from-container [node]
 ;; если функции без аргументов, то можно их записывать и без скобок (включая и keyword). т.е. это будет выглядеть
 ;; вот так (-> (children node) first attributes :href)
-  (-> (children node) (first) (attributes) (get :href)))
+  (-> (children node) first attributes :href))
 
 (defn- process-tree [node elements]
 ;; в данном случае cond используется как if, так что лучше либо использовать if, либо изменить cond чтобы он обрабатывал
@@ -21,21 +21,17 @@
 ;;    (not (vector? ....) ...
 ;;    (is-link-container? ...)
 ;;    :else ...
-
   (cond
     (not (vector? node)) elements
+    ;; тут есть небольшая потенциальная ошибка - предполагается что у "детей" этой ноды не может быть ссылок
+    (is-link-container? node) (conj elements (get-link-from-container node))
     :else
-      (cond
-        ;; тут есть небольшая потенциальная ошибка - предполагается что у "детей" этой ноды не может быть ссылок
-        (is-link-container? node) (conj elements (get-link-from-container node))
-        :else
-          (loop [items node
-                 result elements]
-            ;; тут if будет смотреться лучше - за счет необходимости явно писать :else
-            (cond
-              (empty? items) result
-              :else
-                (recur (next items) (process-tree (first items) result)))))))
+      (loop [items node
+             result elements]
+        ;; тут if будет смотреться лучше - за счет необходимости явно писать :else
+        (if
+          (empty? items) result
+          (recur (next items) (process-tree (first items) result))))))
 
 (defn get-links []
 " 1) Find all elements containing {:class \"r\"}.
